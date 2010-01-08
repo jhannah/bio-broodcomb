@@ -18,7 +18,10 @@ object.
 
    use Bio::BroodComb;
    my $bc = Bio::BroodComb->new();
-   ...
+   $bc->load_large_seq(file => "$Bin/data/large_seq.fasta");
+   $bc->load_small_seq(file => "$Bin/data/small_seq.fasta");
+   $bc->find_subseqs();
+   print $bc->subseq_report1;
 
 =head1 METHODS
 

@@ -4,6 +4,7 @@ use DBI;
 use Moose::Role;
 has '_sql_schema' => (is => 'ro', isa => 'Str', default => sub { _my_sql_schema() });
 has 'db_file'     => (is => 'rw', isa => 'Str', default => sub { 'BroodComb.sqlite' });
+has 'data_source' => (is => 'rw', isa => 'Str');
 has 'dbh'         => (is => 'rw', isa => 'Object');
 no Moose::Role;
 

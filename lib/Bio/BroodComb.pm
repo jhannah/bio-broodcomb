@@ -41,7 +41,8 @@ Things you can do (see the perldoc for the modules below):
 sub BUILD {
    my ($self) = @_;
    my $db_file = $self->db_file;
-   my $dbh = DBI->connect("dbi:SQLite:dbname=$db_file","","", { RaiseError => 1, PrintError => 1 });
+   $self->data_source("dbi:SQLite:dbname=$db_file");
+   my $dbh = DBI->connect($self->data_source,"","", { RaiseError => 1, PrintError => 1 });
    $self->dbh($dbh);
 }
 
