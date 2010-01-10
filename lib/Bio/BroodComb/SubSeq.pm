@@ -42,7 +42,7 @@ just build reference information.
 sub load_large_seq {
    my ($self, %args) = @_;
    $self->large_seq_file($args{file});
-   my $rs = $self->schema->resultset('BCTest::LargeSeq');
+   my $rs = $self->schema->resultset('BCSchema::LargeSeq');
    my $in = Bio::SeqIO->new(-file => $args{file});
    while (my $seq = $in->next_seq) {
       $rs->create({
@@ -68,7 +68,7 @@ The sequence itself and reference information we need are loaded.
 sub load_small_seq {
    my ($self, %args) = @_;
    $self->small_seq_file($args{file});
-   my $rs = $self->schema->resultset('BCTest::SmallSeq');
+   my $rs = $self->schema->resultset('BCSchema::SmallSeq');
    my $in = Bio::SeqIO->new(-file => $args{file});
    while (my $seq = $in->next_seq) {
       # print $seq->seq . "\n";
@@ -92,16 +92,16 @@ Search for each small_seq in large_seq. Record each hit in the hit_positions tab
 sub find_subseqs {
    my ($self) = @_;
    my $in_large = Bio::SeqIO->new(-file=>$self->large_seq_file);
-   my $rs_large =      $self->schema->resultset('BCTest::LargeSeq');
-   my $hit_positions = $self->schema->resultset('BCTest::HitPositions');
+   my $rs_large =      $self->schema->resultset('BCSchema::LargeSeq');
+   my $hit_positions = $self->schema->resultset('BCSchema::HitPositions');
    while (my $large_seq = $in_large->next_seq) {
       my $large_seq_db = $rs_large->search({accession => $large_seq->id})->first();
-      print $large_seq->id . "\n";
-      print $large_seq_db->accession . "\n";
+      #print $large_seq->id . "\n";
+      #print $large_seq_db->accession . "\n";
       my $large_seq_str = $large_seq->seq;
-      my $rs_small = $self->schema->resultset('BCTest::SmallSeq')->search();
+      my $rs_small = $self->schema->resultset('BCSchema::SmallSeq')->search();
       while (my $small_seq_db = $rs_small->next) {
-         print "   " . $small_seq_db->seq . "\n";
+         #print "   " . $small_seq_db->seq . "\n";
          my $small_seq_str = $small_seq_db->seq;
 
          # Forward search.
@@ -109,7 +109,7 @@ sub find_subseqs {
             my $begin = pos($large_seq_str) - length($small_seq_str) + 1;
             my $end =   pos($large_seq_str);
             #$found_count++;
-            print "   Found $small_seq_str at [$begin..$end]\n";
+            #print "   Found $small_seq_str at [$begin..$end]\n";
             $hit_positions->create({
                large_seq_id => $large_seq_db->id, 
                small_seq_id => $small_seq_db->id,
@@ -127,7 +127,7 @@ sub find_subseqs {
             my $end =   pos($large_seq_str);
             ($begin, $end) = ($end, $begin);
             #$found_count++;
-            print "   Found $small_seq_str at [$begin..$end]\n";
+            #print "   Found $small_seq_str at [$begin..$end]\n";
             $hit_positions->create({
                large_seq_id => $large_seq_db->id, 
                small_seq_id => $small_seq_db->id,

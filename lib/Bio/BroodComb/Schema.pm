@@ -79,7 +79,7 @@ via DBIx::Class. This autodetects all our table, columns, etc. on the fly.
 sub _create_dbic_schema {
    my ($self) = @_;
    make_schema_at(
-      'BCTest',
+      'BCSchema',
       {
          debug  => 0,
          naming => 'v4',    # Move to v5 whenever new DBIx::Class 0.09
@@ -87,8 +87,8 @@ sub _create_dbic_schema {
       },
       [ $self->data_source, '', '' ],
    );
-   return 'BCTest'->clone;    # I don't understand this, but this is what DBIx::Class::Schema::Loader
-                              # tests do to get a functional schema....
+   return 'BCSchema'->clone;    # I don't understand this, but this is what DBIx::Class::Schema::Loader
+                                 # tests do to get a functional schema....
 }
 
 
