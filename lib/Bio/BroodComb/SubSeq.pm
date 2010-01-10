@@ -144,6 +144,37 @@ sub find_subseqs {
 }
 
 
+=head2 subseq_report1 
+
+Prints a text report listing each large_seq and all small_seqs found inside it.
+
+=cut
+
+sub subseq_report1 {
+   my ($self) = @_;
+
+   my $rval;
+   my $strsql = <<EOT;
+select l.accession, s.seq, hp.begin, hp.end
+from hit_positions hp, large_seq l, small_seq s
+where hp.large_seq_id = l.id
+and hp.small_seq_id = s.id
+EOT
+   my $sth = $self->dbh->prepare($strsql);
+   $sth->execute;
+   my $last_acc = "";
+   while (my @row = $sth->fetchrow) {
+      if ($row[0] ne $last_acc) {
+         $rval .= "$row[0]\n";
+         $last_acc = $row[0];
+      }
+      $rval .= "   $row[1] found at $row[2]..$row[3]\n";
+   }
+   return $rval;
+}
+
+
+
 =head1 AUTHOR
 
 Jay Hannah, C<< <jay at jays.net> >>
