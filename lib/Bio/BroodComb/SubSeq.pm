@@ -2,8 +2,10 @@ package Bio::BroodComb::SubSeq;
 
 use Bio::SeqIO;
 use Moose::Role;
-has 'large_seq_file' => (is => 'rw', isa => 'Str');
-has 'small_seq_file' => (is => 'rw', isa => 'Str');
+has 'large_seq_file'   => (is => 'rw', isa => 'Str');
+has 'large_seq_format' => (is => 'rw', isa => 'Str');
+has 'small_seq_file'   => (is => 'rw', isa => 'Str');
+has 'small_seq_format' => (is => 'rw', isa => 'Str');
 no Moose::Role;
 
 =head1 NAME
@@ -41,14 +43,24 @@ just build reference information.
 
 sub load_large_seq {
    my ($self, %args) = @_;
-   $self->large_seq_file($args{file});
+
+   $self->large_seq_file(  $args{file});
+   $self->large_seq_format($args{format});
+
    my $rs = $self->schema->resultset('BCSchema::LargeSeq');
-   my $in = Bio::SeqIO->new(-file => $args{file});
+   my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
+   my %known_ids;
    while (my $seq = $in->next_seq) {
+      #print $seq->id . "\n";
+      if ($known_ids{$seq->id}) {
+         warn "Skipping duplicate entry for sequence ID " . $seq->id;
+         next;
+      }
       $rs->create({
          accession => $seq->id,
          length    => length($seq->seq),
       });
+      $known_ids{$seq->id} = 1;
    }
    return 1;
 }
@@ -67,17 +79,26 @@ The sequence itself and reference information we need are loaded.
 
 sub load_small_seq {
    my ($self, %args) = @_;
-   $self->small_seq_file($args{file});
+
+   $self->small_seq_file(  $args{file});
+   $self->small_seq_format($args{format});
+
    my $rs = $self->schema->resultset('BCSchema::SmallSeq');
-   my $in = Bio::SeqIO->new(-file => $args{file});
+   my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
+   my %known_seqs;
    while (my $seq = $in->next_seq) {
-      # print $seq->seq . "\n";
+      print $seq->seq . "\n";
+      if ($known_seqs{$seq->seq}) {
+         warn "Skipping duplicate sequence " . $seq->seq;
+         next;
+      }
       $rs->create({
          seq         => $seq->seq,
          #palindromic => undef,
          #rebase_name => undef,
          #methylation => undef,
       });
+      $known_seqs{$seq->seq} = 1;
    }
    return 1;
 }
@@ -91,10 +112,15 @@ Search for each small_seq in large_seq. Record each hit in the hit_positions tab
 
 sub find_subseqs {
    my ($self) = @_;
-   my $in_large = Bio::SeqIO->new(-file=>$self->large_seq_file);
+   my $in_large = Bio::SeqIO->new(
+      -file   => $self->large_seq_file, 
+      -format => $self->large_seq_format,
+   );
    my $rs_large =      $self->schema->resultset('BCSchema::LargeSeq');
    my $hit_positions = $self->schema->resultset('BCSchema::HitPositions');
+   my %done_accessions;
    while (my $large_seq = $in_large->next_seq) {
+      next if ($done_accessions{$large_seq->id});
       my $large_seq_db = $rs_large->search({accession => $large_seq->id})->first();
       #print $large_seq->id . "\n";
       #print $large_seq_db->accession . "\n";
@@ -110,6 +136,8 @@ sub find_subseqs {
             my $end =   pos($large_seq_str);
             #$found_count++;
             #print "   Found $small_seq_str at [$begin..$end]\n";
+            printf("%s %s %s %s\n", $large_seq_db->id, $small_seq_db->id, $begin, $end);
+
             $hit_positions->create({
                large_seq_id => $large_seq_db->id, 
                small_seq_id => $small_seq_db->id,
@@ -137,7 +165,9 @@ sub find_subseqs {
          }
 
       }
-      
+      # Memorize a hash of large sequence accessions we've already processed so if there
+      # are dupes that we skipped in load, we skip them here too.
+      $done_accessions{$large_seq->id} = 1;
    }
 
    return 1;
