@@ -1,11 +1,13 @@
 package Bio::BroodComb::Schema;
 
 use DBI;
+use DBIx::Class::Schema::Loader qw/ make_schema_at /;
 use Moose::Role;
 has '_sql_schema' => (is => 'ro', isa => 'Str', default => sub { _my_sql_schema() });
 has 'db_file'     => (is => 'rw', isa => 'Str', default => sub { 'BroodComb.sqlite' });
 has 'data_source' => (is => 'rw', isa => 'Str');
 has 'dbh'         => (is => 'rw', isa => 'Object');
+has 'schema'      => (is => 'rw', isa => 'Object');   # DBIx::Class::Schema object
 no Moose::Role;
 
 =head1 NAME
@@ -26,22 +28,35 @@ object.
 
 =head1 METHODS
 
-=head2 initialize_database
+=cut
+
+
+sub _schema_startup {
+   my ($self) = @_;
+   $DB::single = 1;
+   my $db_file = $self->db_file;
+   $self->data_source("dbi:SQLite:dbname=$db_file");
+   my $dbh = DBI->connect($self->data_source,"","", { RaiseError => 1, PrintError => 1 });
+   $self->dbh($dbh);
+   $self->schema($self->_create_dbic_schema);
+}
+
+
+=head2 create_database
 
 Creates a new BroodComb database of empty tables. 
 
-  $bc->initialize_database(
+  $bc->create_database(
      db_file => "/tmp/bc.sqlite";   # Defaults to CWD "BroodComb.sqlite"
   );
 
 =cut
 
-sub initialize_database {
+sub create_database {
    my ($self, %args) = @_;
    if ($args{db_file}) {
       $self->db_file($args{db_file});
    }
-   $DB::single = 1;
    # Hmmm... SQLite silently fails if we don't split the statements apart.
    my @sql = split /;/, $self->_sql_schema;
    foreach my $sql (@sql) {
@@ -51,6 +66,29 @@ sub initialize_database {
    }
 
    return 1;
+}
+
+
+=head2 _create_dbic_schema
+
+Create a DBIx::Class::Schema object (in memory only) so we can interact with our database
+via DBIx::Class. This autodetects all our table, columns, etc. on the fly.
+
+=cut
+
+sub _create_dbic_schema {
+   my ($self) = @_;
+   make_schema_at(
+      'BCTest',
+      {
+         debug  => 0,
+         naming => 'v4',    # Move to v5 whenever new DBIx::Class 0.09
+                            # and DBIx::Class::Schema::Loader ship (Mar 2010?)
+      },
+      [ $self->data_source, '', '' ],
+   );
+   return 'BCTest'->clone;    # I don't understand this, but this is what DBIx::Class::Schema::Loader
+                              # tests do to get a functional schema....
 }
 
 

@@ -2,6 +2,8 @@ package Bio::BroodComb::SubSeq;
 
 use Bio::SeqIO;
 use Moose::Role;
+has 'large_seq_file' => (is => 'rw', isa => 'Str');
+has 'small_seq_file' => (is => 'rw', isa => 'Str');
 no Moose::Role;
 
 =head1 NAME
@@ -39,10 +41,16 @@ just build reference information.
 
 sub load_large_seq {
    my ($self, %args) = @_;
+   $self->large_seq_file($args{file});
+   my $rs = $self->schema->resultset('BCTest::LargeSeq');
    my $in = Bio::SeqIO->new(-file => $args{file});
    while (my $seq = $in->next_seq) {
-      print $seq->seq . "\n";
+      $rs->create({
+         accession => $seq->id,
+         length    => length($seq->seq),
+      });
    }
+   return 1;
 }
 
 
@@ -59,10 +67,80 @@ The sequence itself and reference information we need are loaded.
 
 sub load_small_seq {
    my ($self, %args) = @_;
+   $self->small_seq_file($args{file});
+   my $rs = $self->schema->resultset('BCTest::SmallSeq');
    my $in = Bio::SeqIO->new(-file => $args{file});
    while (my $seq = $in->next_seq) {
-      print $seq->seq . "\n";
+      # print $seq->seq . "\n";
+      $rs->create({
+         seq         => $seq->seq,
+         #palindromic => undef,
+         #rebase_name => undef,
+         #methylation => undef,
+      });
    }
+   return 1;
+}
+
+
+=head2 find_subseqs 
+
+Search for each small_seq in large_seq. Record each hit in the hit_positions table.
+
+=cut
+
+sub find_subseqs {
+   my ($self) = @_;
+   my $in_large = Bio::SeqIO->new(-file=>$self->large_seq_file);
+   my $rs_large =      $self->schema->resultset('BCTest::LargeSeq');
+   my $hit_positions = $self->schema->resultset('BCTest::HitPositions');
+   while (my $large_seq = $in_large->next_seq) {
+      my $large_seq_db = $rs_large->search({accession => $large_seq->id})->first();
+      print $large_seq->id . "\n";
+      print $large_seq_db->accession . "\n";
+      my $large_seq_str = $large_seq->seq;
+      my $rs_small = $self->schema->resultset('BCTest::SmallSeq')->search();
+      while (my $small_seq_db = $rs_small->next) {
+         print "   " . $small_seq_db->seq . "\n";
+         my $small_seq_str = $small_seq_db->seq;
+
+         # Forward search.
+         while ($large_seq_str =~ /$small_seq_str/g) {
+            my $begin = pos($large_seq_str) - length($small_seq_str) + 1;
+            my $end =   pos($large_seq_str);
+            #$found_count++;
+            print "   Found $small_seq_str at [$begin..$end]\n";
+            $hit_positions->create({
+               large_seq_id => $large_seq_db->id, 
+               small_seq_id => $small_seq_db->id,
+               begin        => $begin,
+               end          => $end,
+            });
+         }
+
+         # Reverse search. Assume alphabet is DNA for now.
+         my $reverse = $small_seq_str;
+         $reverse =~ tr/ACGT/TGCA/;
+         $reverse = join "", reverse (split //, $reverse);
+         while ($large_seq_str =~ /$reverse/g) {
+            my $begin = pos($large_seq_str) - length($small_seq_str) + 1;
+            my $end =   pos($large_seq_str);
+            ($begin, $end) = ($end, $begin);
+            #$found_count++;
+            print "   Found $small_seq_str at [$begin..$end]\n";
+            $hit_positions->create({
+               large_seq_id => $large_seq_db->id, 
+               small_seq_id => $small_seq_db->id,
+               begin        => $begin,
+               end          => $end,
+            });
+         }
+
+      }
+      
+   }
+
+   return 1;
 }
 
 

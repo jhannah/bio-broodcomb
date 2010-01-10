@@ -22,7 +22,7 @@ A collection of sequence analysis tools.
 
     use Bio::BroodComb;
     my $bc = Bio::BroodComb->new();
-    $bc->initialize_database;
+    $bc->create_database;
 
 Things you can do (see the perldoc for the modules below):
 
@@ -40,10 +40,7 @@ Things you can do (see the perldoc for the modules below):
 # BUILD is Moose's after 'new'
 sub BUILD {
    my ($self) = @_;
-   my $db_file = $self->db_file;
-   $self->data_source("dbi:SQLite:dbname=$db_file");
-   my $dbh = DBI->connect($self->data_source,"","", { RaiseError => 1, PrintError => 1 });
-   $self->dbh($dbh);
+   $self->_schema_startup;
 }
 
 
