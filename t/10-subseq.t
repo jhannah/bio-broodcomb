@@ -9,7 +9,7 @@ ok($bc->create_database,                                        "create_database
 ok($bc->load_large_seq(file => "$Bin/data/large_seq.fasta"),    "load_large_seq()");
 ok($bc->load_small_seq(file => "$Bin/data/small_seq.fasta"),    "load_small_seq()");
 ok($bc->find_subseqs(),                                         "find_subseqs()");
-print $bc->subseq_report1;
+ok($bc->subseq_report1,                                         "subseq_report1()");
 
 # Verify the results.
 my $schema = $bc->schema;
