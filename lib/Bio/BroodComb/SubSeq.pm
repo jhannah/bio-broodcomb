@@ -174,13 +174,13 @@ sub find_subseqs {
 }
 
 
-=head2 subseq_report1 
+=head2 subseq_report_hit_position1
 
-Prints a text report listing each large_seq and all small_seqs found inside it.
+Returns a text report listing all hit_positions, ordered and grouped by accession.
 
 =cut
 
-sub subseq_report1 {
+sub subseq_report_hit_position1 {
    my ($self) = @_;
 
    my $rval;
@@ -189,6 +189,7 @@ select l.accession, s.seq, hp.begin, hp.end
 from hit_positions hp, large_seq l, small_seq s
 where hp.large_seq_id = l.id
 and hp.small_seq_id = s.id
+order by l.accession
 EOT
    my $sth = $self->dbh->prepare($strsql);
    $sth->execute;
