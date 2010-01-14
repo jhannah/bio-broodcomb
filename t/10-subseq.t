@@ -1,5 +1,6 @@
 use Test::More tests => 9;
 
+use DBIx::Class::ResultClass::HashRefInflator;
 use Bio::BroodComb;
 use FindBin qw($Bin);
 

@@ -37,7 +37,10 @@ This data is memorized into the "large_seq" table. We assume your large sequence
 be truly massive, so the sequences themselves are not imported into the database, we
 just build reference information.
 
-  $bc->load_large_seq(file => "large_seq.fasta");
+  $bc->load_large_seq(
+     file   => "large_seq.fasta", 
+     format => "fasta"            # optional
+  );
 
 =cut
 
@@ -45,7 +48,7 @@ sub load_large_seq {
    my ($self, %args) = @_;
 
    $self->large_seq_file(  $args{file});
-   $self->large_seq_format($args{format});
+   $self->large_seq_format($args{format}) if $args{format};
 
    my $rs = $self->schema->resultset('BCSchema::LargeSeq');
    my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
@@ -73,7 +76,10 @@ Tells BroodComb where your "small sequence" file is.
 This data is memorized into the "small_seq" table.
 The sequence itself and reference information we need are loaded.
 
-  $bc->load_small_seq(file => "small_seq.fasta");
+  $bc->load_small_seq(
+     file   => "small_seq.fasta", 
+     format => "fasta",            # optional
+  );
 
 =cut
 
@@ -81,7 +87,7 @@ sub load_small_seq {
    my ($self, %args) = @_;
 
    $self->small_seq_file(  $args{file});
-   $self->small_seq_format($args{format});
+   $self->small_seq_format($args{format}) if $args{format};
 
    my $rs = $self->schema->resultset('BCSchema::SmallSeq');
    my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
