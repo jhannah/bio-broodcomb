@@ -14,7 +14,7 @@ use Moose::Role;
 #has 'small_seq_format' => (is => 'rw', isa => 'Str');
 no Moose::Role;
 
-my $debug = 1;
+my $debug = 0;
 
 =head1 NAME
 
@@ -64,7 +64,6 @@ sub add_primerset {
       reverse_primer => $args{reverse_primer},
       description    => $args{description},
    });
-   print "primerset added\n";
 }
 
 
@@ -181,7 +180,7 @@ sub find_pcr_products {
          database_acc         => $fh->database_acc,
       });
       while (my $rh = $rs2->next) {   # rh = reverse_hit
-         printf(
+         $debug && printf(
             "%4s %10s %14s %14s\n", 
             $fh->primer_set_id, 
             $fh->database_acc, 
@@ -193,30 +192,28 @@ sub find_pcr_products {
          my $product_end;
          if ($fh->begin < $fh->end) {
             if ($rh->begin <= $fh->end || $rh->end <= $fh->end) {
-               print "   reverse is behind the forward\n";
+               $debug && print "   reverse is behind the forward\n";
                next;
             }
             if ($rh->begin < $rh->end) {
-               print "   reverse is in the wrong orientation\n";
+               $debug && print "   reverse is in the wrong orientation\n";
                next;
             }
             $product_begin = $fh->end + 1;
             $product_end =   $rh->end - 1;
          } else {
             if ($rh->end >= $fh->end || $rh->begin >= $fh->end) {
-               print "   reverse is behind the forward\n";
+               $debug && print "   reverse is behind the forward\n";
                next;
             }
             if ($rh->begin > $rh->end) {
-               print "   reverse is in the wrong orientation\n";
+               $debug && print "   reverse is in the wrong orientation\n";
                next;
             }
             $product_begin = $fh->end - 1;
             $product_end =   $rh->end + 1;
          }
 
-
-         print "going to create\n";
          $self->schema->resultset('Products')->create({
             primer_set_id        => $fh->primer_set_id,
             database_filename    => $fh->database_filename,
@@ -228,7 +225,6 @@ sub find_pcr_products {
             reverse_primer_begin => $rh->begin,
             reverse_primer_end   => $rh->end,
          });
-         print "done creating\n";
       }
    }
    return 1;
@@ -241,6 +237,34 @@ sub arrow {
       return sprintf "%4s -> %-4s", $n1, $n2;
    } 
    return sprintf "%4s <- %-4s", $n1, $n2;
+}
+
+
+=head2 pcr_products_report1
+
+Returns a text report listing all products.
+
+=cut
+
+sub pcr_report1 {
+   my ($self) = @_;
+
+   my $rval;
+   my $strsql = <<EOT;
+select ps.description, p.database_filename, p.database_acc, p.forward_primer_begin,
+  p.forward_primer_end, p.product_begin, p.product_end, p.reverse_primer_begin,
+  p.reverse_primer_end
+from products p, primer_sets ps
+where p.primer_set_id = ps.id
+order by ps.description
+EOT
+   my $sth = $self->dbh->prepare($strsql);
+   $sth->execute;
+   while (my @row = $sth->fetchrow) {
+      $rval .= join "\t", @row;
+      $rval .= "\n";
+   }
+   return $rval;
 }
 
 

@@ -1,4 +1,4 @@
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use Bio::BroodComb;
@@ -55,7 +55,6 @@ my $rs = $schema->resultset('BCSchema::Products')->search(
    }
 );
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-$DB::single = 1;
 my $expect = [ {
    id                   => 1,
    primer_set_id        => 1,
@@ -69,11 +68,8 @@ my $expect = [ {
 } ];
 is_deeply([ $rs->all ],  $expect,                               "pcr_hits data");
 
-
-exit;
-
-ok(print $bc->pcr_report1,                                      "pcr_report1()");
-
+# ------------------------
+ok($bc->pcr_report1,                                            "pcr_report1()");
 
 
 

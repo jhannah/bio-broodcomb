@@ -33,7 +33,7 @@ object.
 
 sub _schema_startup {
    my ($self) = @_;
-   $DB::single = 1;
+
    my $db_file = $self->db_file;
    my $db_existed_already = -r $db_file;
    $self->data_source("dbi:SQLite:dbname=$db_file");
