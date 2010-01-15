@@ -3,15 +3,6 @@ package Bio::BroodComb::PCR;
 use Bio::Tools::SeqPattern;
 use Bio::SeqIO;
 use Moose::Role;
-## Moose::Meta::Attribute::Native::Trait::Array 
-#has 'PrimerSets' => (is => 'rw', isa => 'ArrayRef', traits => ['Array'], default => sub {[]},
-#   handles => {
-#      all_primersets   => 'elements',
-#      count_primersets => 'count',
-#      add_primerset    => 'push',
-#   }
-#);
-#has 'small_seq_format' => (is => 'rw', isa => 'Str');
 no Moose::Role;
 
 my $debug = 0;
@@ -249,7 +240,13 @@ Returns a text report listing all products.
 sub pcr_report1 {
    my ($self) = @_;
 
-   my $rval;
+   my $rval = join "\t", qw/
+      description database_filename database_acc forward_primer_begin
+      forward_primer_end product_begin product_end reverse_primer_begin 
+      reverse_primer_end
+   /;
+   $rval .= "\n";
+
    my $strsql = <<EOT;
 select ps.description, p.database_filename, p.database_acc, p.forward_primer_begin,
   p.forward_primer_end, p.product_begin, p.product_end, p.reverse_primer_begin,
