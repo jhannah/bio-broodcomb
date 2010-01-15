@@ -4,6 +4,7 @@ use Moose;
 with qw(
    Bio::BroodComb::Schema
    Bio::BroodComb::SubSeq
+   Bio::BroodComb::PCR
 );
 no Moose;
 

@@ -93,46 +93,85 @@ sub _create_dbic_schema {
 
 
 sub _my_sql_schema {
-   return <<EOT;
+
+   # These are the Bio::BroodComb::SubSeq tables
+   my $rval = <<EOT;
 drop table if exists large_seq;
 create table large_seq (
-  id integer primary key,
-  accession text not null,
-  length integer not null,
-  classification text
+   id integer primary key,
+   accession text not null,
+   length integer not null,
+   classification text
 );
 create unique index ix1 ON large_seq (accession);
 
 drop table if exists small_seq;
 create table small_seq (
-  id integer primary key,
-  seq text not null,
-  palindromic text,
-  rebase_name text,
-  methylation text
+   id integer primary key,
+   seq text not null,
+   palindromic text,
+   rebase_name text,
+   methylation text
 );
 create unique index ix2 ON small_seq (seq);
 
-drop table if exists hits;
-create table hits (
-  id integer primary key,
-  large_seq_id integer not null,
-  small_seq_id integer not null,
-  raw_hit_count integer not null,
-  normalized_hit_count1 integer
+drop table if exists subseq_hits;
+create table subseq_hits (
+   id integer primary key,
+   large_seq_id integer not null,
+   small_seq_id integer not null,
+   raw_hit_count integer not null,
+   normalized_hit_count1 integer
 );
-create unique index ix3 ON hits (large_seq_id, small_seq_id);
+create unique index ix3 ON subseq_hits (large_seq_id, small_seq_id);
 
-drop table if exists hit_positions;
-create table hit_positions (
-  id integer primary key,
-  large_seq_id integer not null,
-  small_seq_id integer not null,
-  begin integer not null,
-  end integer not null
+drop table if exists subseq_hit_positions;
+create table subseq_hit_positions (
+   id integer primary key,
+   large_seq_id integer not null,
+   small_seq_id integer not null,
+   begin integer not null,
+   end integer not null
 );
-create unique index ix4 ON hit_positions (large_seq_id, small_seq_id, begin, end);
+create unique index ix4 ON subseq_hit_positions (large_seq_id, small_seq_id, begin, end);
 EOT
+
+   # These are the Bio::BroodComb::PCR tables
+   $rval .= <<EOT;
+drop table if exists primer_sets;
+create table primer_sets (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   forward_primer text,
+   reverse_primer text,
+   description text
+);
+
+drop table if exists pcr_hits;
+create table pcr_hits (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   primer_set_id int,
+   primer_set_direction text,
+   database_filename text,
+   database_acc text,
+   begin int,
+   end int
+);
+
+drop table if exists products;
+create table products (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+   primer_set_id int,
+   database_filename char(12),
+   database_acc char(8),
+   forward_primer_start int,
+   forward_primer_end int,
+   product_start int,
+   product_end int,
+   reverse_primer_start int,
+   reverse_primer_end int
+);
+EOT
+   return $rval;
 }
 
 

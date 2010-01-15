@@ -16,7 +16,7 @@ ok($bc->subseq_report_hit_position1,                            "subseq_report_h
 my $schema = $bc->schema;
 is ($schema->resultset('BCSchema::LargeSeq')->search()->count(), 3, "large_seq row count");
 is ($schema->resultset('BCSchema::SmallSeq')->search()->count(), 3, "small_seq row count");
-my $rs = $schema->resultset('BCSchema::HitPositions')->search({}, {order_by => 'id'});;
+my $rs = $schema->resultset('BCSchema::SubseqHitPositions')->search({}, {order_by => 'id'});;
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 my $expect = [
    {id=>1, large_seq_id=>1,small_seq_id=>1,begin=>6, end=>15},

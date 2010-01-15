@@ -22,8 +22,8 @@ object.
 
    use Bio::BroodComb;
    my $bc = Bio::BroodComb->new();
-   $bc->load_large_seq(file => "$Bin/data/large_seq.fasta");
-   $bc->load_small_seq(file => "$Bin/data/small_seq.fasta");
+   $bc->load_large_seq(file => "large_seq.fasta");
+   $bc->load_small_seq(file => "small_seq.fasta");
    $bc->find_subseqs();
    print $bc->subseq_report1;
 
@@ -118,12 +118,14 @@ Search for each small_seq in large_seq. Record each hit in the hit_positions tab
 
 sub find_subseqs {
    my ($self) = @_;
+
    my $in_large = Bio::SeqIO->new(
       -file   => $self->large_seq_file, 
       -format => $self->large_seq_format,
    );
    my $rs_large =      $self->schema->resultset('BCSchema::LargeSeq');
-   my $hit_positions = $self->schema->resultset('BCSchema::HitPositions');
+   my $hit_positions = $self->schema->resultset('BCSchema::SubseqHitPositions');
+
    my %done_accessions;
    while (my $large_seq = $in_large->next_seq) {
       next if ($done_accessions{$large_seq->id});
@@ -192,7 +194,7 @@ sub subseq_report_hit_position1 {
    my $rval;
    my $strsql = <<EOT;
 select l.accession, s.seq, hp.begin, hp.end
-from hit_positions hp, large_seq l, small_seq s
+from subseq_hit_positions hp, large_seq l, small_seq s
 where hp.large_seq_id = l.id
 and hp.small_seq_id = s.id
 order by l.accession
