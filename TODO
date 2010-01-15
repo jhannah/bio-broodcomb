@@ -1,17 +1,24 @@
-
 http://clab.ist.unomaha.edu/CLAB/index.php/RT
 
--------------
+==========
+TODO
+==========
+
+
+
+
+==========
+DONE
+==========
 
 Merge RT849 in as Bio::BroodComb::PCR.
 
    #849: Write pipeline: eprimer3, in-silico PCR, reports
    https://rtg.ist.unomaha.edu//Ticket/Display.html?id=849 (guest, guest)
 
-Which will complete this project:
+   Which will complete this project:
 
-   #880: in-silico PCR search
-   https://rtg.ist.unomaha.edu//Ticket/Display.html?id=880 (guest, guest)
+      #880: in-silico PCR search
+      https://rtg.ist.unomaha.edu//Ticket/Display.html?id=880 (guest, guest)
 
--------------
 
