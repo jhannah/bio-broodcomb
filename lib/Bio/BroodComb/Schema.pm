@@ -35,24 +35,28 @@ sub _schema_startup {
    my ($self) = @_;
    $DB::single = 1;
    my $db_file = $self->db_file;
+   my $db_existed_already = -r $db_file;
    $self->data_source("dbi:SQLite:dbname=$db_file");
    my $dbh = DBI->connect($self->data_source,"","", { RaiseError => 1, PrintError => 1 });
    $self->dbh($dbh);
+   unless ($db_existed_already) {
+      $self->create_tables;
+   }
    $self->schema($self->_create_dbic_schema);
 }
 
 
-=head2 create_database
+=head2 create_tables
 
 Creates a new BroodComb database of empty tables. 
 
-  $bc->create_database(
+  $bc->create_tables(
      db_file => "/tmp/bc.sqlite";   # Defaults to CWD "BroodComb.sqlite"
   );
 
 =cut
 
-sub create_database {
+sub create_tables {
    my ($self, %args) = @_;
    if ($args{db_file}) {
       $self->db_file($args{db_file});

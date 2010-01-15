@@ -1,5 +1,6 @@
 package Bio::BroodComb::PCR;
 
+use Bio::Tools::SeqPattern;
 use Bio::SeqIO;
 use Moose::Role;
 ## Moose::Meta::Attribute::Native::Trait::Array 
@@ -56,27 +57,13 @@ Adds a primer set to BroodComb (the primer_sets table).
 sub add_primerset {
    my ($self, %args) = @_;
 
-  my $rs = $self->schema->resultset('BCSchema::LargeSeq');
-   my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
-   my %known_ids;
-   while (my $seq = $in->next_seq) {
-      print $seq->id . "\n";
-
-   my $rs = $self->schema->resultset('BCSchema::LargeSeq');
-   my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
-   my %known_ids;
-   while (my $seq = $in->next_seq) {
-      #print $seq->id . "\n";
-      if ($known_ids{$seq->id}) {
-         warn "Skipping duplicate entry for sequence ID " . $seq->id;
-         next;
-      }
-      $rs->create({
-         accession => $seq->id,
-         length    => length($seq->seq),
-      });
-
-      
+   my $rs = $self->schema->resultset('BCSchema::PrimerSets');
+   $rs->create({
+      # id             =>    # let SQLite set this
+      forward_primer => $args{forward_primer},
+      reverse_primer => $args{reverse_primer},
+      description    => $args{description},
+   });
    print "primerset added\n";
 }
 
@@ -98,22 +85,19 @@ sub find_pcr_hits {
    my $builder = $in->sequence_builder();
    $builder->want_none();
    $builder->add_wanted_slot('accession_number','desc','seq');
-   my $rs_large =      $self->schema->resultset('BCSchema::LargeSeq');
-   my $hit_positions = $self->schema->resultset('BCSchema::PcrHits');
-
+   my $rs_large = $self->schema->resultset('BCSchema::LargeSeq');
+   my $rs_ps    = $self->schema->resultset('BCSchema::PrimerSets');
+   my $rs_hits  = $self->schema->resultset('BCSchema::PcrHits');
    while (my $seq = $in->next_seq) {
       my $acc = $seq->accession_number;
-      my $seq = uc($seq->seq);
-      $debug && print "Searching accession_number: $acc\n";
-
-      my $rs_small = $self->schema->resultset('BCSchema::SmallSeq')->search();
-      while (my $small_seq_db = $rs_small->next) {
-         print "   " . $small_seq_db->seq . "\n";
-         next;
+      if ($acc eq 'unknown') {
+         $acc = $seq->id;
       }
-      next;
+      my $seq = uc($seq->seq);
+      $debug && print "Searching $acc\n";
 
-      foreach my $ps (@{ $self->PrimerSets }) {
+      my $all_ps = $rs_ps->search();
+      while (my $ps = $all_ps->next) {
          $debug && print "Looking for " . $ps->description . "\n";
          
          # my $forward = Bio::Seq->new( -seq => $ps->forward_primer );
@@ -140,10 +124,10 @@ sub find_pcr_hits {
                my $end   = pos($seq);
                my $start = $end - length($&) + 1;
 
-               my $hit = $hit_positions->new({
-               #   primer_set_id       => $ps->id,
-               #   database_filename   => $file,
-               #   database_acc        => $acc,
+               my $hit = $rs_hits->new({
+                  primer_set_id       => $ps->id,
+                  database_filename   => $self->large_seq_file,
+                  #database_acc        => $acc,
                });
                if ($i == 1 or $i == 2) {
                   $hit->primer_set_direction("forward");
@@ -153,15 +137,13 @@ sub find_pcr_hits {
                if ($i == 2 or $i == 4) {
                   ($start, $end) = ($end, $start);
                }
-               $hit->start($start);
+               $hit->begin($start);
                $hit->end($end);
-
-               $debug && print "Found '$&' while searching for " . $hit->id . "\n";
-               print ".";
 
                # die "there's a reverse sequence" if ($start > $end);
 
                $hit->insert;
+               $debug && print "Found '$&' while searching for " . $hit->id . "\n";
             }
          }
       }

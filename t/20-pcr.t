@@ -5,7 +5,7 @@ use FindBin qw($Bin);
 
 # Do the deed.
 ok(my $bc = Bio::BroodComb->new(),                              "new()");
-ok($bc->create_database,                                        "create_database()");
+ok($bc->create_tables,                                          "create_tables()");
 ok($bc->load_large_seq(file => "$Bin/data/large_seq.fasta"),    "load_large_seq()");
 ok($bc->add_primerset(
       description    => "U5/R",   # however you want it reported
