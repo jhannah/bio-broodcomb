@@ -122,12 +122,12 @@ sub find_pcr_hits {
 
             while ($seq =~ /$search/g) {
                my $end   = pos($seq);
-               my $start = $end - length($&) + 1;
+               my $begin = $end - length($&) + 1;
 
                my $hit = $rs_hits->new({
                   primer_set_id       => $ps->id,
                   database_filename   => $self->large_seq_file,
-                  #database_acc        => $acc,
+                  database_acc        => $acc,
                });
                if ($i == 1 or $i == 2) {
                   $hit->primer_set_direction("forward");
@@ -135,12 +135,12 @@ sub find_pcr_hits {
                   $hit->primer_set_direction("reverse");
                }
                if ($i == 2 or $i == 4) {
-                  ($start, $end) = ($end, $start);
+                  ($begin, $end) = ($end, $begin);
                }
-               $hit->begin($start);
+               $hit->begin($begin);
                $hit->end($end);
 
-               # die "there's a reverse sequence" if ($start > $end);
+               # die "there's a reverse sequence" if ($begin > $end);
 
                $hit->insert;
                $debug && print "Found '$&' while searching for " . $hit->id . "\n";
@@ -154,7 +154,7 @@ sub find_pcr_hits {
 
 =head2 find_pcr_products
 
-Given all the 'hits' that find_hits() found, populate the 'products' table.
+Given all the 'pcr_hits' that find_pcr_hits() found, populate the 'products' table.
 
 =cut
 
@@ -165,17 +165,17 @@ sub find_pcr_products {
    $self->schema->resultset('Products')->search({})->delete;
 
    # Grab all the forward hits...
-   my $rs1 = $self->schema->resultset('Hits')->search(
+   my $rs1 = $self->schema->resultset('PcrHits')->search(
       {
          primer_set_direction => 'forward',
       },
       {
-         columns  => [ qw/ primer_set_id database_acc start end / ],
+         columns  => [ qw/ primer_set_id database_filename database_acc begin end / ],
          distinct => 1,
       }
    );
    while (my $fh = $rs1->next) {   # fh = forward_hit
-      my $rs2 = $self->schema->resultset('Hits')->search({
+      my $rs2 = $self->schema->resultset('PcrHits')->search({
          primer_set_direction => 'reverse',
          primer_set_id        => $fh->primer_set_id,
          database_acc         => $fh->database_acc,
@@ -185,50 +185,53 @@ sub find_pcr_products {
             "%4s %10s %14s %14s\n", 
             $fh->primer_set_id, 
             $fh->database_acc, 
-            arrow($fh->start, $fh->end),
-            arrow($rh->start, $rh->end),
+            arrow($fh->begin, $fh->end),
+            arrow($rh->begin, $rh->end),
          );
 
-         my $product_start;
+         my $product_begin;
          my $product_end;
-         if ($fh->start < $fh->end) {
-            if ($rh->start <= $fh->end || $rh->end <= $fh->end) {
+         if ($fh->begin < $fh->end) {
+            if ($rh->begin <= $fh->end || $rh->end <= $fh->end) {
                print "   reverse is behind the forward\n";
                next;
             }
-            if ($rh->start < $rh->end) {
+            if ($rh->begin < $rh->end) {
                print "   reverse is in the wrong orientation\n";
                next;
             }
-            $product_start = $fh->end + 1;
+            $product_begin = $fh->end + 1;
             $product_end =   $rh->end - 1;
          } else {
-            if ($rh->end >= $fh->end || $rh->start >= $fh->end) {
+            if ($rh->end >= $fh->end || $rh->begin >= $fh->end) {
                print "   reverse is behind the forward\n";
                next;
             }
-            if ($rh->start > $rh->end) {
+            if ($rh->begin > $rh->end) {
                print "   reverse is in the wrong orientation\n";
                next;
             }
-            $product_start = $fh->end - 1;
+            $product_begin = $fh->end - 1;
             $product_end =   $rh->end + 1;
          }
 
 
+         print "going to create\n";
          $self->schema->resultset('Products')->create({
             primer_set_id        => $fh->primer_set_id,
             database_filename    => $fh->database_filename,
             database_acc         => $fh->database_acc,
-            forward_primer_start => $fh->start,
+            forward_primer_begin => $fh->begin,
             forward_primer_end   => $fh->end,
-            product_start        => $product_start,
+            product_begin        => $product_begin,
             product_end          => $product_end,
-            reverse_primer_start => $rh->start,
+            reverse_primer_begin => $rh->begin,
             reverse_primer_end   => $rh->end,
          });
+         print "done creating\n";
       }
    }
+   return 1;
 }
 
 

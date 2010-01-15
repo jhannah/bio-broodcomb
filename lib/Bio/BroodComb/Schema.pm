@@ -167,11 +167,11 @@ create table products (
    primer_set_id int,
    database_filename char(12),
    database_acc char(8),
-   forward_primer_start int,
+   forward_primer_begin int,
    forward_primer_end int,
-   product_start int,
+   product_begin int,
    product_end int,
-   reverse_primer_start int,
+   reverse_primer_begin int,
    reverse_primer_end int
 );
 EOT
