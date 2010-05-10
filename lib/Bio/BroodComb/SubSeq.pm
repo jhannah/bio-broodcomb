@@ -1,6 +1,7 @@
 package Bio::BroodComb::SubSeq;
 
 use Bio::SeqIO;
+use Carp qw(carp croak);
 use Moose::Role;
 has 'large_seq_file'   => (is => 'rw', isa => 'Str');
 has 'large_seq_format' => (is => 'rw', isa => 'Str');
@@ -51,9 +52,18 @@ sub load_large_seq {
    $self->large_seq_format($args{format}) if $args{format};
 
    my $rs = $self->schema->resultset('BCSchema::LargeSeq');
-   my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
+   my $in;
+   eval {
+      $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
+   };
+   if( $@ ) {
+      carp "BioPerl cannot parse your input file '$args{file}'";
+      croak $@;
+   }
+
    my %known_ids;
-   while (my $seq = $in->next_seq) {
+   my $seq;
+   while (eval { $seq = $in->next_seq } ) {
       #print $seq->id . "\n";
       if ($known_ids{$seq->id}) {
          warn "Skipping duplicate entry for sequence ID " . $seq->id;
@@ -65,6 +75,11 @@ sub load_large_seq {
       });
       $known_ids{$seq->id} = 1;
    }
+   if( $@ ) {
+      carp "BioPerl cannot parse your input file '$args{file}'";
+      croak $@;
+   }
+
    return 1;
 }
 
@@ -90,9 +105,17 @@ sub load_small_seq {
    $self->small_seq_format($args{format}) if $args{format};
 
    my $rs = $self->schema->resultset('BCSchema::SmallSeq');
-   my $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
+   my $in;
+   eval { 
+      $in = Bio::SeqIO->new(-file => $args{file}, -format => $args{format});
+   };
+   if( $@ ) {
+      carp "BioPerl cannot parse your input file '$args{file}'";
+      croak $@;
+   }
    my %known_seqs;
-   while (my $seq = $in->next_seq) {
+   my $seq;
+   while (eval { $seq = $in->next_seq }) {
       print $seq->seq . "\n";
       if ($known_seqs{$seq->seq}) {
          warn "Skipping duplicate sequence " . $seq->seq;
@@ -105,6 +128,10 @@ sub load_small_seq {
          #methylation => undef,
       });
       $known_seqs{$seq->seq} = 1;
+   }
+   if( $@ ) {
+      carp "BioPerl cannot parse your input file '$args{file}'";
+      croak $@;
    }
    return 1;
 }
