@@ -116,7 +116,7 @@ sub load_small_seq {
    my %known_seqs;
    my $seq;
    while (eval { $seq = $in->next_seq }) {
-      print $seq->seq . "\n";
+      #print $seq->seq . "\n";
       if ($known_seqs{$seq->seq}) {
          warn "Skipping duplicate sequence " . $seq->seq;
          next;
@@ -171,7 +171,7 @@ sub find_subseqs {
             my $end =   pos($large_seq_str);
             #$found_count++;
             #print "   Found $small_seq_str at [$begin..$end]\n";
-            printf("%s %s %s %s\n", $large_seq_db->id, $small_seq_db->id, $begin, $end);
+            #printf("%s %s %s %s\n", $large_seq_db->id, $small_seq_db->id, $begin, $end);
 
             $hit_positions->create({
                large_seq_id => $large_seq_db->id, 
