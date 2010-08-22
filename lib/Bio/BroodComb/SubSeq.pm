@@ -64,7 +64,7 @@ sub load_large_seq {
    my %known_ids;
    my $seq;
    while (eval { $seq = $in->next_seq } ) {
-      #print $seq->id . "\n";
+      # printf("%s %s %s\n", $seq->id, $seq->accession_number, $seq->description);
       if ($known_ids{$seq->id}) {
          warn "Skipping duplicate entry for sequence ID " . $seq->id;
          next;
@@ -172,7 +172,7 @@ sub find_subseqs {
             #$found_count++;
             #print "   Found $small_seq_str at [$begin..$end]\n";
             #printf("%s %s %s %s\n", $large_seq_db->id, $small_seq_db->id, $begin, $end);
-
+            $DB::single = 1;
             $hit_positions->create({
                large_seq_id => $large_seq_db->id, 
                small_seq_id => $small_seq_db->id,
